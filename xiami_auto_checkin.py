@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # encoding:utf-8
 # +-----------------------------------------------------------------------------
-# | Fork from huxuan
+# | Forked from huxuan
 # | E-mail: i(at)huxuan.org
 # +-----------------------------------------------------------------------------
 #
@@ -251,7 +251,7 @@ def main():
         return
     configuration = ConfigHandler(configfilepath)
     if len(configuration.username) == 0 or len(configuration.password) == 0:
-        xiamilogger.error('Not find username or password in configuration!')
+        xiamilogger.error('Not find username or password in configuration file!')
         return
     
     # Init urllib2
@@ -264,7 +264,7 @@ def main():
             xiami = XiamiHandler(p[0], p[1])
             xiami.process()
             Time.sleep(random.randint(0, 10))
-        xiamilogger.info('Single-pass task was completed. Quit.')
+        xiamilogger.info('Single-pass task was completed successfully. Quit.')
     else:
         # Loop
         current_day = datetime.now().day - 1
@@ -278,11 +278,12 @@ def main():
                 while True:
                     dt_current = datetime.now()
                     if dt_current.hour == random_time.hour and dt_current.minute == random_time.minute:
-                        xiamilogger.info('Scheduled task was started!')
+                        xiamilogger.info('Start scheduled task...')
                         # XiamiHandler
                         for p in configuration.pairs:
                             xiami = XiamiHandler(p[0], p[1])
                             xiami.process()
+                            Time.sleep(random.randint(0, 10))
                         xiamilogger.info('Scheduled task was completed!')
                         break
                     Time.sleep(5)
