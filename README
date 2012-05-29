@@ -11,3 +11,17 @@ python xiami_auto_checkin.py -q
 to run script in a single-pass mode. It will login and check in, then quit.
 
 windviki(at)gmail.com
+
+
+说明：
+打包好的exe版本使用方法（win7，开机自启动，签到一次则退出）：
+1.解压到任意目录。
+
+2.拷贝dist目录下的config.txt到上层目录。即loop.bat和once.bat目录。
+
+3.在config.txt里面修改好自己的用户名密码。需要签到的只有一个账户，则可以只写一个。多个则用","隔开。
+
+4.右击once.bat，创建快捷方式。
+
+4.剪切改快捷方式到：
+C:\Users\<你的windows用户名>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup 
