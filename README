@@ -1,10 +1,13 @@
 1. rename config_template.txt to config.txt and set your username(email) and password.
-As for multiple accouts, please split them by ','.
+As for multiple accouts, please split them with ','.
+So that your password cannot contain a ',' :-(.
+
 2. type command in shell or in cmd:
 python xiami_auto_checkin.py
-to run script in a loop mode. It will login and check-in everyday automatically.
+to run script in a loop mode. It will login and check in everyday automatically.
+
 3. type command in shell or in cmd:
 python xiami_auto_checkin.py -q
-to run script in a single-pass mode. It will login and check-in, then quit.
+to run script in a single-pass mode. It will login and check in, then quit.
 
 windviki(at)gmail.com
