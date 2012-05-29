@@ -1,0 +1,4 @@
+[xiami]
+username = email1@XXX.com, email2@XXX.com
+password = password1, password2
+timerange = 7:00-11:30
