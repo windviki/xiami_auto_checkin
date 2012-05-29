@@ -1,4 +1,4 @@
-1. rename config_template.txt and set your username(email) and password.
+1. rename config_template.txt to config.txt and set your username(email) and password.
 As for multiple accouts, please split them by ','.
 2. type command in shell or in cmd:
 python xiami_auto_checkin.py
