@@ -27,6 +27,8 @@ import logging.handlers
 import random
 import time as Time
 
+import traceback
+
 def initlogger():
     """
     Initialize logger
@@ -95,9 +97,9 @@ class ConfigHandler:
         self.username = []
         self.password = []
         if self.config.has_option(self.configsection, "username"):
-            self.username = [x.strip() for x in self.config.get(self.configsection, "username").split(',')]
+            self.username = [x.strip() for x in self.config.get(self.configsection, "username").split(',') if len(x) and not x.isspace()]
         if self.config.has_option(self.configsection, "password"):
-            self.password = [x.strip() for x in self.config.get(self.configsection, "password").split(',')]
+            self.password = [x.strip() for x in self.config.get(self.configsection, "password").split(',') if len(x) and not x.isspace()]
         self.pairs = zip(self.username, self.password)
         self.startime = ""
         self.endtime = ""
@@ -185,13 +187,16 @@ class XiamiHandler:
         pattern = re.compile(r'<div class="idh">(已连续签到\d+天)</div>')
         result = pattern.search(response)
         if result: 
-            return result.group(1)
+            return unicode(result.group(1), 'utf-8').encode('gb2312')
         return False
 
     def _login(self):
         # Login
         login_request = urllib2.Request(self.login_url, self.login_data, self.login_headers)
-        self.loginresponse = urllib2.urlopen(login_request).read()
+        try:
+            self.loginresponse = urllib2.urlopen(login_request).read()
+        except urllib2.HTTPError, he:
+            self.logger.error('[Error] _login Failed! error = %s', he)
         # Checkin
         checkin_pattern = re.compile(r'<a class="check_in" href="(.*?)">')
         checkin_result = checkin_pattern.search(self.loginresponse)
@@ -200,11 +205,18 @@ class XiamiHandler:
     def _logout(self):
         # Logout
         logout_request = urllib2.Request(self.logout_url, None, self.logout_headers)
-        self.logoutresponse = urllib2.urlopen(logout_request).read()
+        try:
+            self.logoutresponse = urllib2.urlopen(logout_request).read()
+        except urllib2.HTTPError, he:
+            self.logger.error('[Error] _logout Failed! error = %s', he)
         
     def _checkin(self):
         checkin_request = urllib2.Request(self.checkin_url, None, self.checkin_headers)
-        self.checkinresponse = urllib2.urlopen(checkin_request).read()
+        try:
+            self.checkinresponse = urllib2.urlopen(checkin_request).read()
+        except urllib2.HTTPError, he:
+            self.logger.error('[Error] _checkin Failed! error = %s', he)
+            return False
     
         # Result
         result = self._check(self.checkinresponse)
@@ -249,45 +261,61 @@ def main():
     if not os.path.exists(configfilepath):
         xiamilogger.error('%s does not exist!', configfilepath)
         return
+
     configuration = ConfigHandler(configfilepath)
     if len(configuration.username) == 0 or len(configuration.password) == 0:
         xiamilogger.error('Not find username or password in configuration file!')
         return
-    
-    # Init urllib2
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-    urllib2.install_opener(opener)
 
-    if bRunOnce:
-        xiamilogger.info('Start single-pass task...')
-        for p in configuration.pairs:
-            xiami = XiamiHandler(p[0], p[1])
-            xiami.process()
-            Time.sleep(random.randint(0, 10))
-        xiamilogger.info('Single-pass task was completed successfully. Quit.')
-    else:
-        # Loop
-        current_day = datetime.now().day - 1
-        while True:
-            dt_current = datetime.now()
-            if dt_current.day <> current_day: # new day comes
-                current_day = dt_current.day
-                random_time = RandomTimeGenerator(configuration.startime, configuration.endtime).get()
-                xiamilogger.info('Scheduled at: %s', random_time)
-                Time.sleep(5)
-                while True:
-                    dt_current = datetime.now()
-                    if dt_current.hour == random_time.hour and dt_current.minute == random_time.minute:
-                        xiamilogger.info('Start scheduled task...')
-                        # XiamiHandler
-                        for p in configuration.pairs:
-                            xiami = XiamiHandler(p[0], p[1])
-                            xiami.process()
-                            Time.sleep(random.randint(0, 10))
-                        xiamilogger.info('Scheduled task was completed!')
-                        break
+    #import pprint
+    #pprint.pprint(configuration.username)
+    #pprint.pprint(configuration.password)
+    #pprint.pprint(configuration.pairs)
+    
+    try:
+        # Init urllib2
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
+        urllib2.install_opener(opener)
+
+        if bRunOnce:
+            xiamilogger.info('Start single-pass task...')
+            for i, p in enumerate(configuration.pairs):
+                xiami = XiamiHandler(p[0], p[1])
+                while not xiami.process():
+                    xiamilogger.error('Process failed! try it again 15 seconds later...')
+                    Time.sleep(15)
+                if i != len(configuration.pairs) - 1:
+                    Time.sleep(random.randint(30, 40))
+            xiamilogger.info('Single-pass task was completed successfully. Quit.')
+        else:
+            # Loop
+            current_day = datetime.now().day - 1
+            while True:
+                dt_current = datetime.now()
+                if dt_current.day <> current_day: # new day comes
+                    current_day = dt_current.day
+                    random_time = RandomTimeGenerator(configuration.startime, configuration.endtime).get()
+                    xiamilogger.info('Scheduled at: %s', random_time)
                     Time.sleep(5)
-            Time.sleep(59)
+                    while True:
+                        dt_current = datetime.now()
+                        if dt_current.hour == random_time.hour and dt_current.minute == random_time.minute:
+                            xiamilogger.info('Start scheduled task...')
+                            # XiamiHandler
+                            for i, p in enumerate(configuration.pairs):
+                                xiami = XiamiHandler(p[0], p[1])
+                                while not xiami.process():
+                                    xiamilogger.error('Process failed! try it again 15 seconds later...')
+                                    Time.sleep(15)
+                                if i != len(configuration.pairs) - 1:
+                                    Time.sleep(random.randint(30, 40))
+                            xiamilogger.info('Scheduled task was completed!')
+                            break
+                        Time.sleep(5) # check scheduled minute every 5 seconds
+                Time.sleep(59) # check new days every 59 seconds
+
+    except Exception, e:
+        xiamilogger.error('fatal error, error = %s, traceback = %s', e, traceback.format_exc())
 
 
 if __name__ == '__main__':
