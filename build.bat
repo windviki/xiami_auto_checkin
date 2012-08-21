@@ -1,0 +1,1 @@
+python buildexe.py py2exe
