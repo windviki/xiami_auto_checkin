@@ -197,6 +197,8 @@ class XiamiHandler:
             self.loginresponse = urllib2.urlopen(login_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _login Failed! error = %s', he)
+        except urllib2.URLError, ue:
+            self.logger.error('[Error] _login Failed! error = %s', ue)
         # Checkin
         checkin_pattern = re.compile(r'<a class="check_in" href="(.*?)">')
         checkin_result = checkin_pattern.search(self.loginresponse)
@@ -216,6 +218,9 @@ class XiamiHandler:
             self.checkinresponse = urllib2.urlopen(checkin_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _checkin Failed! error = %s', he)
+            return False
+        except urllib2.URLError, ue:
+            self.logger.error('[Error] _login Failed! error = %s', ue)
             return False
     
         # Result
