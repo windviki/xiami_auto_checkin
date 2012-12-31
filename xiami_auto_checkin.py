@@ -56,6 +56,9 @@ def initlogger():
     
     logging.getLogger('').setLevel(logging.DEBUG)
     
+def get_total_seconds(td):
+    # datetime.total_seconds has been introduced in Python 2.7, therefore it can't be used here (Python 2.6)
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
 
 class RandomTimeGenerator:
     """
@@ -71,14 +74,14 @@ class RandomTimeGenerator:
         
     def get(self):
         _current = datetime.now()
-        _minutes = random.randint(1, self.span.total_seconds() / 60)
+        _minutes = random.randint(1, get_total_seconds(self.span) / 60)
         _delta = timedelta(minutes=_minutes)
         if _current < self.starttime:
             return self.starttime + _delta
         elif _current > self.endtime:
             return _current.replace(minute=_current.minute + 1)
         else:
-            _minutes = random.randint(1, (self.endtime - _current).total_seconds() / 60 + 1)
+            _minutes = random.randint(1, get_total_seconds(self.endtime - _current) / 60 + 1)
             _delta = timedelta(minutes=_minutes)
             return _current + _delta
     
