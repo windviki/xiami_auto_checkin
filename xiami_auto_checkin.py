@@ -139,18 +139,22 @@ class XiamiHandler:
         self.checkinresponse = ''
         self.logoutresponse = ''
         self.cookie = ''
-        self.login_url = 'http://www.xiami.com/web/login'
-        self.login_data = urllib.urlencode({'email':self.username,
+        self.login_url = 'http://www.xiami.com/member/login'
+        self.login_data = urllib.urlencode({
+                                       'done':"%2F",
+                                       'type':'',
+                                       'email':self.username,
                                        'password':self.password,
-                                       'LoginButton':'登陆', })
-        self.login_headers = {'Referer':'http://www.xiami.com/web/login',
-                              'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0', }
+                                       'autologin':0,
+                                       'submit':'登 录', })
+        self.login_headers = {'Referer':'http://www.xiami.com/member/login',
+                              'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
         self.checkin_url = ''
-        self.checkin_headers = {'Referer':'http://www.xiami.com/web',
-                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0', }
+        self.checkin_headers = {'Referer':'http://www.xiami.com/member/login',
+                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
         self.logout_url = 'http://www.xiami.com/member/logout'
         self.logout_headers = {'Referer':'http://www.xiami.com/member/mypm-notice',
-                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0', }
+                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
         
     def process(self, debug=False):
         checkin_result = self._login()
@@ -178,26 +182,21 @@ class XiamiHandler:
     def _check(self, response):
         """
         Check whether checkin is successful
-    
-        Args:
-            response: the urlopen result of checkin
-    
-        Returns:
-            If succeed, return a string like '已经连续签到**天'
-                ** is the amount of continous checkin days
-            If not, return False
         """
-        pattern = re.compile(r'<div class="idh">(已连续签到\d+天)</div>')
+        pattern = re.compile(r'(\d+天)<span>已连续签到</span>')
         result = pattern.search(response)
         if result: 
             return unicode(result.group(1), 'utf-8').encode('gb2312')
         return False
 
     def _login(self):
-        # Login
+        # Post login info
         login_request = urllib2.Request(self.login_url, self.login_data, self.login_headers)
         try:
-            self.loginresponse = urllib2.urlopen(login_request).read()
+            _loginresponse = urllib2.urlopen(login_request).read()
+            # Get main page
+            main_page_request = urllib2.Request("http://www.xiami.com", None, self.login_headers)
+            self.loginresponse = urllib2.urlopen(main_page_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _login Failed! error = %s', he)
             self.loginresponse = ""
