@@ -149,8 +149,8 @@ class XiamiHandler:
                                        'submit':'登 录', })
         self.login_headers = {'Referer':'http://www.xiami.com/member/login',
                               'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
-        self.checkin_url = ''
-        self.checkin_headers = {'Referer':'http://www.xiami.com/member/login',
+        self.checkin_url = "http://www.xiami.com/task/signin"
+        self.checkin_headers = {'Referer':'http://www.xiami.com/',
                                 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
         self.logout_url = 'http://www.xiami.com/member/logout'
         self.logout_headers = {'Referer':'http://www.xiami.com/member/mypm-notice',
@@ -169,8 +169,8 @@ class XiamiHandler:
                 self.logger.error('[Error] Login Failed! user = %s', self.username)
                 bresult = False
         else:
-            self.checkin_url = 'http://www.xiami.com' + checkin_result.group(1)
-            self.logger.debug('checkin url = %s', self.checkin_url)
+            #self.checkin_url = 'http://www.xiami.com' + checkin_result.group(1)
+            #self.logger.debug('checkin url = %s', self.checkin_url)
             bresult = self._checkin()
         if bresult:
             self._logout()
@@ -187,7 +187,7 @@ class XiamiHandler:
         result = pattern.search(response)
         if result: 
             return unicode(result.group(1), 'utf-8').encode('gb2312')
-        return False
+        return ""
 
     def _login(self):
         # Post login info
@@ -207,7 +207,7 @@ class XiamiHandler:
             self.logger.error('[Error] _login Failed! error = %s', ce)
             self.loginresponse = ""
         # Checkin
-        checkin_pattern = re.compile(r'<a class="check_in" href="(.*?)">')
+        checkin_pattern = re.compile(r'签到得')
         checkin_result = checkin_pattern.search(self.loginresponse)
         return checkin_result
     
@@ -303,7 +303,7 @@ def main():
             xiamilogger.info('Start single-pass task...')
             for i, p in enumerate(configuration.pairs):
                 xiami = XiamiHandler(p[0], p[1])
-                while not xiami.process(debug=True):
+                while not xiami.process(debug=False):
                     xiamilogger.error('Process failed! try it again 15 seconds later...')
                     Time.sleep(15)
                 if i != len(configuration.pairs) - 1:
@@ -326,7 +326,7 @@ def main():
                             # XiamiHandler
                             for i, p in enumerate(configuration.pairs):
                                 xiami = XiamiHandler(p[0], p[1])
-                                while not xiami.process(debug=True):
+                                while not xiami.process(debug=False):
                                     xiamilogger.error('Process failed! try it again 15 seconds later...')
                                     Time.sleep(15)
                                 if i != len(configuration.pairs) - 1:
