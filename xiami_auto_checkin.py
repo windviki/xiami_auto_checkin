@@ -200,8 +200,13 @@ class XiamiHandler:
             self.loginresponse = urllib2.urlopen(login_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _login Failed! error = %s', he)
+            self.loginresponse = ""
         except urllib2.URLError, ue:
             self.logger.error('[Error] _login Failed! error = %s', ue)
+            self.loginresponse = ""
+        except Exception, ce:
+            self.logger.error('[Error] _login Failed! error = %s', ce)
+            self.loginresponse = ""
         # Checkin
         checkin_pattern = re.compile(r'<a class="check_in" href="(.*?)">')
         checkin_result = checkin_pattern.search(self.loginresponse)
@@ -214,6 +219,10 @@ class XiamiHandler:
             self.logoutresponse = urllib2.urlopen(logout_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _logout Failed! error = %s', he)
+            self.logoutresponse = ""
+        except Exception, ce:
+            self.logger.error('[Error] _logout Failed! error = %s', ce)
+            self.logoutresponse = ""
         
     def _checkin(self):
         checkin_request = urllib2.Request(self.checkin_url, None, self.checkin_headers)
@@ -221,9 +230,15 @@ class XiamiHandler:
             self.checkinresponse = urllib2.urlopen(checkin_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _checkin Failed! error = %s', he)
+            self.checkinresponse = ""
             return False
         except urllib2.URLError, ue:
-            self.logger.error('[Error] _login Failed! error = %s', ue)
+            self.logger.error('[Error] _checkin Failed! error = %s', ue)
+            self.checkinresponse = ""
+            return False
+        except Exception, ce:
+            self.logger.error('[Error] _checkin Failed! error = %s', ce)
+            self.checkinresponse = ""
             return False
     
         # Result
@@ -289,7 +304,7 @@ def main():
             xiamilogger.info('Start single-pass task...')
             for i, p in enumerate(configuration.pairs):
                 xiami = XiamiHandler(p[0], p[1])
-                while not xiami.process():
+                while not xiami.process(debug=True):
                     xiamilogger.error('Process failed! try it again 15 seconds later...')
                     Time.sleep(15)
                 if i != len(configuration.pairs) - 1:
@@ -312,7 +327,7 @@ def main():
                             # XiamiHandler
                             for i, p in enumerate(configuration.pairs):
                                 xiami = XiamiHandler(p[0], p[1])
-                                while not xiami.process():
+                                while not xiami.process(debug=True):
                                     xiamilogger.error('Process failed! try it again 15 seconds later...')
                                     Time.sleep(15)
                                 if i != len(configuration.pairs) - 1:
