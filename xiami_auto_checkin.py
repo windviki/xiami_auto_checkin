@@ -226,7 +226,10 @@ class XiamiHandler:
     def _checkin(self):
         checkin_request = urllib2.Request(self.checkin_url, None, self.checkin_headers)
         try:
-            self.checkinresponse = urllib2.urlopen(checkin_request).read()
+            _checkinresponse = urllib2.urlopen(checkin_request).read()
+            # Get main page
+            main_page_request = urllib2.Request("http://www.xiami.com", None, self.login_headers)
+            self.checkinresponse = urllib2.urlopen(main_page_request).read()
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _checkin Failed! error = %s', he)
             self.checkinresponse = ""
