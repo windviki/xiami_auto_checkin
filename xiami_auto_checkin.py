@@ -139,6 +139,7 @@ class XiamiHandler:
         self.checkinresponse = ''
         self.logoutresponse = ''
         self.cookie = ''
+        self.useragent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36'
         self.login_url = 'http://www.xiami.com/member/login'
         self.login_data = urllib.urlencode({
                                        'done':"%2F",
@@ -147,47 +148,38 @@ class XiamiHandler:
                                        'password':self.password,
                                        'autologin':0,
                                        'submit':'登 录', })
-        self.login_headers = {'Referer':'http://www.xiami.com/member/login',
-                              'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
+        self.login_headers = {'Referer':'http://www.xiami.com/home',
+                              'User-Agent': self.useragent, }
         self.checkin_url = "http://www.xiami.com/task/signin"
-        self.checkin_headers = {'Referer':'http://www.xiami.com/',
-                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
+        self.checkin_headers = {'Referer':'http://www.xiami.com/home',
+                                'User-Agent': self.useragent, }
         self.logout_url = 'http://www.xiami.com/member/logout'
         self.logout_headers = {'Referer':'http://www.xiami.com/member/mypm-notice',
-                                'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36', }
+                                'User-Agent': self.useragent, }
         
     def process(self, debug=False):
-        checkin_result = self._login()
+        login_result = self._login()
+        if not login_result:
+            self.logger.error('[Error] Login Failed! user = %s', self.username)
+            return False
+        checkin_pattern = re.compile(r'<b class="icon tosign done">')
+        checkin_result = checkin_pattern.search(self.loginresponse)
         bresult = False
-        if not checkin_result:
-            # Checkin Already | Login Failed
-            result = self._check(self.loginresponse)
-            if result:
-                self.logger.info('[Succeed] Checkin Already! user = %s, result = %s', self.username, result)
-                bresult = True
-            else:
-                self.logger.error('[Error] Login Failed! user = %s', self.username)
-                bresult = False
+        if checkin_result:
+            # Checkin Already
+            self.logger.info('[Succeed] Checkin Already! user = %s, result = %s days', self.username, result)
+            bresult = True
         else:
             #self.checkin_url = 'http://www.xiami.com' + checkin_result.group(1)
             #self.logger.debug('checkin url = %s', self.checkin_url)
             bresult = self._checkin()
+            self.logger.info('[Succeed] Checked in! user = %s, result = %s days', self.username, self.checkinresponse)
         if bresult:
             self._logout()
             self.logger.info('Logout, user = %s', self.username)
         if debug:
             self._dump()
         return bresult
-            
-    def _check(self, response):
-        """
-        Check whether checkin is successful
-        """
-        pattern = re.compile(r'(\d+天)<span>已连续签到</span>')
-        result = pattern.search(response)
-        if result: 
-            return unicode(result.group(1), 'utf-8').encode('gb2312')
-        return ""
 
     def _login(self):
         # Post login info
@@ -195,21 +187,21 @@ class XiamiHandler:
         try:
             _loginresponse = urllib2.urlopen(login_request).read()
             # Get main page
-            main_page_request = urllib2.Request("http://www.xiami.com", None, self.login_headers)
+            main_page_request = urllib2.Request("http://www.xiami.com/home", None, self.login_headers)
             self.loginresponse = urllib2.urlopen(main_page_request).read()
+            return True
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _login Failed! error = %s', he)
             self.loginresponse = ""
+            return False
         except urllib2.URLError, ue:
             self.logger.error('[Error] _login Failed! error = %s', ue)
             self.loginresponse = ""
+            return False
         except Exception, ce:
             self.logger.error('[Error] _login Failed! error = %s', ce)
             self.loginresponse = ""
-        # Checkin
-        checkin_pattern = re.compile(r'签到得')
-        checkin_result = checkin_pattern.search(self.loginresponse)
-        return checkin_result
+            return False
     
     def _logout(self):
         # Logout
@@ -226,10 +218,11 @@ class XiamiHandler:
     def _checkin(self):
         checkin_request = urllib2.Request(self.checkin_url, None, self.checkin_headers)
         try:
-            _checkinresponse = urllib2.urlopen(checkin_request).read()
+            self.checkinresponse = urllib2.urlopen(checkin_request).read()
             # Get main page
-            main_page_request = urllib2.Request("http://www.xiami.com", None, self.login_headers)
-            self.checkinresponse = urllib2.urlopen(main_page_request).read()
+            #main_page_request = urllib2.Request("http://www.xiami.com", None, self.login_headers)
+            #self.checkinresponse = urllib2.urlopen(main_page_request).read()
+            return True
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _checkin Failed! error = %s', he)
             self.checkinresponse = ""
@@ -241,15 +234,6 @@ class XiamiHandler:
         except Exception, ce:
             self.logger.error('[Error] _checkin Failed! error = %s', ce)
             self.checkinresponse = ""
-            return False
-    
-        # Result
-        result = self._check(self.checkinresponse)
-        if result:
-            self.logger.info('[Succeed] Checkin Succeed! user = %s, result = %s', self.username, result)
-            return True
-        else:
-            self.logger.error('[Error] Checkin Failed!')
             return False
         
     def _dump(self):
@@ -329,9 +313,11 @@ def main():
                             # XiamiHandler
                             for i, p in enumerate(configuration.pairs):
                                 xiami = XiamiHandler(p[0], p[1])
-                                while not xiami.process(debug=False):
+                                retry_times = 10
+                                while not xiami.process(debug=False) and retry_times:
                                     xiamilogger.error('Process failed! try it again 15 seconds later...')
                                     Time.sleep(15)
+                                    retry_times -= 1
                                 if i != len(configuration.pairs) - 1:
                                     Time.sleep(random.randint(30, 40))
                             xiamilogger.info('Scheduled task was completed!')
