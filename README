@@ -1,24 +1,56 @@
+# A Xiami auto-checkin script #
+
+## Use it on SAE (xiami.py): ##
+
+1. copy index.wsgi, config.yaml, xiami.py to your SAE SVN dir.
+
+2. modify SAE name, email address and password in index.wsgi.
+
+3. modify users_info in xiami.py (your xiami accout and password).
+
+4. upload it to SAE. it will do checkin task everyday and send result to your mail.
+
+
+## Use it as standalone tool (xiami.py): ##
+
+1. modify users_info in xiami.py (your xiami accout and password).
+
+2. python xiami.py to run it.
+
+
+## Use as standalone script (xiami\_auto\_checkin.py) (): ##
+
+**Deprecated. No update any more.**
+
 1. rename config_template.txt to config.txt and set your username(email) and password.
 As for multiple accouts, please split them with ','.
 So that your password cannot contain a ',' :-(.
 
 2. type command in shell or in cmd:
 python xiami_auto_checkin.py
-to run script in a loop mode. It will login and check in everyday automatically.
+to run script in loop mode (e.g. use nohup to run it on a *nux server). It will login and check in everyday automatically.
 
 3. type command in shell or in cmd:
 python xiami_auto_checkin.py -q
-to run script in a single-pass mode. It will login and check in, then quit.
+to run script in single-pass mode. It will login and check in, then quit.
 
 windviki(at)gmail.com
 
 ----------------------------------------------------------------------------
 
-ËµÃ÷£º
-´ò°üºÃµÄexe°æ±¾Ê¹ÓÃ·½·¨£¨win7£¬¿ª»ú×ÔÆô¶¯£¬Ç©µ½Ò»´ÎÔòÍË³ö£©£º
-1.½âÑ¹µ½ÈÎÒâÄ¿Â¼¡£
-2.¿½±´distÄ¿Â¼ÏÂµÄconfig.txtµ½ÉÏ²ãÄ¿Â¼¡£¼´loop.batºÍonce.batÄ¿Â¼¡£
-3.ÔÚconfig.txtÀïÃæĞŞ¸ÄºÃ×Ô¼ºµÄÓÃ»§ÃûÃÜÂë¡£ĞèÒªÇ©µ½µÄÖ»ÓĞÒ»¸öÕË»§£¬Ôò¿ÉÒÔÖ»Ğ´Ò»¸ö¡£¶à¸öÔòÓÃ","¸ô¿ª¡£
-4.ÓÒ»÷once.bat£¬´´½¨¿ì½İ·½Ê½¡£
-4.¼ôÇĞ¸Ã¿ì½İ·½Ê½µ½£º
-C:\Users\<ÄãµÄwindowsÓÃ»§Ãû>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup 
+## windowsä¸Šæ‰“åŒ…å¥½çš„exeä½¿ç”¨è¯´æ˜ï¼š ##
+
+**Deprecated. No update any more.**
+
+æ‰“åŒ…å¥½çš„exeç‰ˆæœ¬ä½¿ç”¨æ–¹æ³•ï¼ˆwin7ï¼Œå¼€æœºè‡ªå¯åŠ¨ï¼Œç­¾åˆ°ä¸€æ¬¡åˆ™é€€å‡ºï¼‰ï¼š
+
+1. è§£å‹åˆ°ä»»æ„ç›®å½•ã€‚
+
+2. æ‹·è´distç›®å½•ä¸‹çš„config.txtåˆ°ä¸Šå±‚ç›®å½•ã€‚å³loop.batå’Œonce.batç›®å½•ã€‚
+
+3. åœ¨config.txté‡Œé¢ä¿®æ”¹å¥½è‡ªå·±çš„ç”¨æˆ·åå¯†ç ã€‚éœ€è¦ç­¾åˆ°çš„åªæœ‰ä¸€ä¸ªè´¦æˆ·ï¼Œåˆ™å¯ä»¥åªå†™ä¸€ä¸ªã€‚å¤šä¸ªåˆ™ç”¨","éš”å¼€ã€‚
+
+4. å³å‡»once.batï¼Œåˆ›å»ºå¿«æ·æ–¹å¼ã€‚
+
+5. å‰ªåˆ‡è¯¥å¿«æ·æ–¹å¼åˆ°ï¼š
+C:\Users\<ä½ çš„windowsç”¨æˆ·å>\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup 

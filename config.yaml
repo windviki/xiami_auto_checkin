@@ -1,0 +1,7 @@
+---
+name: your_sae_name
+version: 1
+cron:
+  - description: xiami_morning
+    url: xiami_checkin_xxx
+    schedule: 21 7 * * *

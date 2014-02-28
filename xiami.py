@@ -11,15 +11,18 @@ import os
 import urllib
 import urllib2
 import cookielib
+import pprint
 
 import logging
 import logging.handlers
 import random
+import datetime
 import time as Time
 
 import traceback
 from StringIO import StringIO
 import gzip
+import time
 
 # Init urllib2
 global_cookie_jar = cookielib.CookieJar()
@@ -95,6 +98,20 @@ class XiamiHandler:
             'Pragma': 'no-cache',
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': self.user_agent,
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+        self.home_headers = {
+            'Referer': 'http://www.xiami.com/',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip,deflate,sdch',
+            'Accept-Language': 'zh-CN,en-US;q=0.8,en;q=0.6',
+            'Cache-Control': 'must-revalidate',
+            'Connection': 'keep-alive',
+            #'Host': 'www.xiami.com',
+            #'Origin': 'http://www.xiami.com',
+            #'Pragma': 'no-cache',
+            #'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': self.user_agent,
         }
         self.checkin_url = "http://www.xiami.com/task/signin"
         self.checkin_headers = {
@@ -117,8 +134,10 @@ class XiamiHandler:
             'User-Agent': self.user_agent,
         }
         self.user_id = -1
+        self.mail_content = {}
 
     def process(self, debug=False):
+        self.mail_content = {}
         login_result = self._login()
         if not login_result:
             self.logger.error('[Error] Login Failed! user = %s', self.username)
@@ -160,12 +179,40 @@ class XiamiHandler:
 
     def _login(self):
         try:
+            xiami_token = ""
             # Main page
             main_page_request = urllib2.Request(self.main_page_url, None, self.common_headers)
             main_page_response = urllib2.urlopen(main_page_request)
+            self.logger.info('_login requested main page ...')
             cookies = global_cookie_jar.make_cookies(main_page_response, main_page_request)
-            cookie = cookies[0]
-            xiami_token = cookie.value
+            if cookies:
+                xiami_cookie = cookies[0]  # _xiamitoken
+                #unsign_cookie = cookies[1]  # _unsign_token
+                xiami_token = xiami_cookie.value
+                #unsign_token = xiami_cookie.unsign_cookie
+                self.logger.info('_xiamitoken = %s', pprint.pformat(cookies))
+            else:
+                self.logger.info('no cookies ...')
+
+            # home
+            time_value = int(time.time()*1000)
+            main_page_home_request = urllib2.Request(
+                "%s/index/home?_=%s" % (self.main_page_url, str(time_value)),
+                None, self.home_headers)
+            main_page_home_response = urllib2.urlopen(main_page_home_request)
+            self.logger.info('_login requested index/home, time_value = %s', time_value)
+
+            cookies = global_cookie_jar.make_cookies(main_page_home_response, main_page_home_request)
+            if cookies:
+                xiami_cookie = cookies[0]  # _xiamitoken
+                #unsign_cookie = cookies[1]  # _unsign_token
+                xiami_token = xiami_cookie.value
+                #unsign_token = xiami_cookie.unsign_cookie
+                #self.logger.info('_xiamitoken = %s', pprint.pformat(cookies))
+            else:
+                #self.logger.info('no cookies ...')
+                pass
+
             self.login_data.update({"_xiamitoken": xiami_token})
             self.logger.info('token = %s', xiami_token)
 
@@ -184,16 +231,21 @@ class XiamiHandler:
                 gf = gzip.GzipFile(fileobj=temp_buffer)
                 self.login_response = gf.read()
 
+            self.mail_content.update({"_login": "OK"})
+
             return True
         except urllib2.HTTPError, he:
+            self.mail_content.update({"_login": he})
             self.logger.error('[Error] _login Failed! error = %s', he)
             self.login_response = ""
             return False
         except urllib2.URLError, ue:
+            self.mail_content.update({"_login": ue})
             self.logger.error('[Error] _login Failed! error = %s', ue)
             self.login_response = ""
             return False
         except Exception, ce:
+            self.mail_content.update({"_login": ce})
             self.logger.error('[Error] _login Failed! error = %s', ce)
             self.login_response = ""
             return False
@@ -206,6 +258,10 @@ class XiamiHandler:
         except urllib2.HTTPError, he:
             self.logger.error('[Error] _logout Failed! error = %s', he)
             self.logout_response = ""
+        except urllib2.URLError, ue:
+            self.logger.error('[Error] _logout Failed! error = %s', ue)
+            self.login_response = ""
+            return False
         except Exception, ce:
             self.logger.error('[Error] _logout Failed! error = %s', ce)
             self.logout_response = ""
@@ -222,18 +278,24 @@ class XiamiHandler:
                 gf = gzip.GzipFile(fileobj=temp_buffer)
                 self.check_in_response = gf.read()
 
+            checked_days = self._get_day(self.check_in_response)
             self.logger.info('[Succeed] Checked in! user = %s, result = %s days',
-                             self.username, self._get_day(self.check_in_response))
+                             self.username, checked_days)
+            self.mail_content.update({"_checkin": "OK, %s days" % checked_days})
+
             return True
         except urllib2.HTTPError, he:
+            self.mail_content.update({"_checkin": he})
             self.logger.error('[Error] _checkin Failed! error = %s', he)
             self.check_in_response = ""
             return False
         except urllib2.URLError, ue:
+            self.mail_content.update({"_checkin": ue})
             self.logger.error('[Error] _checkin Failed! error = %s', ue)
             self.check_in_response = ""
             return False
         except Exception, ce:
+            self.mail_content.update({"_checkin": ce})
             self.logger.error('[Error] _checkin Failed! error = %s', ce)
             self.check_in_response = ""
             return False
@@ -260,7 +322,7 @@ users_info = [
 ]
 
 
-def run():
+def work():
     """
     Main process of auto checkin
     """
@@ -272,24 +334,39 @@ def run():
 
     try:
         xiami_logger.info('Start single-pass task...')
+        all_done = True
+        results = {
+            "title": "",
+            "content": [],
+        }
         for i, p in enumerate(users_info):
-            xiami = XiamiHandler(p[0], p[1])
+            xiami_handler = XiamiHandler(p[0], p[1])
             xiami_logger.info('Process %s...', p[0])
             retry = 5
-            while not xiami.process(debug=False):
+            while not xiami_handler.process(debug=False):
                 retry -= 1
                 if retry < 0:
                     xiami_logger.error('Process %s failed! abort...', p[0])
                     break
                 xiami_logger.error('Process %s failed! try it again 15 seconds later...', p[0])
                 Time.sleep(15)
+            if retry < 0:
+                all_done = False
+            results["content"].append({
+                "user": p[0],
+                "result": xiami_handler.mail_content,
+            })
             if i != len(users_info) - 1:
-                Time.sleep(random.randint(10, 25))
+                Time.sleep(random.randint(5, 10))
         xiami_logger.info('Single-pass task was completed successfully. Quit.')
+        results["title"] = "XIAMI check-in %s %s" % (datetime.datetime.now().strftime("%Y%m%d"),
+                                                     "OK" if all_done else "FAILED")
+        return results
 
     except Exception, e:
         xiami_logger.error('fatal error, error = %s, traceback = %s', e, traceback.format_exc())
+        return {}
 
 
 if __name__ == '__main__':
-    run()
+    pprint.pprint(work())

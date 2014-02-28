@@ -175,6 +175,20 @@ class XiamiHandler:
             'Pragma': 'no-cache',
             'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': self.user_agent,
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+        self.home_headers = {
+            'Referer': 'http://www.xiami.com/',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip,deflate,sdch',
+            'Accept-Language': 'zh-CN,en-US;q=0.8,en;q=0.6',
+            'Cache-Control': 'must-revalidate',
+            'Connection': 'keep-alive',
+            #'Host': 'www.xiami.com',
+            #'Origin': 'http://www.xiami.com',
+            #'Pragma': 'no-cache',
+            #'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': self.user_agent,
         }
         self.checkin_url = "http://www.xiami.com/task/signin"
         self.checkin_headers = {
