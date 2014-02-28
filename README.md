@@ -1,5 +1,7 @@
 # A Xiami auto-checkin script #
 
+windviki(at)gmail.com
+
 ## Use it on SAE (xiami.py): ##
 
 1. copy index.wsgi, config.yaml, xiami.py to your SAE SVN dir.
@@ -17,7 +19,10 @@
 
 2. python xiami.py to run it.
 
+
+
 ----------------------------------------------------------------------------
+
 
 ## Use as standalone script (xiami\_auto\_checkin.py): ##
 
@@ -35,7 +40,7 @@ to run script in loop mode (e.g. use nohup to run it on a *nux server). It will 
 python xiami_auto_checkin.py -q
 to run script in single-pass mode. It will login and check in, then quit.
 
-windviki(at)gmail.com
+
 
 
 ## windows上打包好的exe使用说明： ##
