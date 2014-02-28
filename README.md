@@ -17,8 +17,9 @@
 
 2. python xiami.py to run it.
 
+----------------------------------------------------------------------------
 
-## Use as standalone script (xiami\_auto\_checkin.py) (): ##
+## Use as standalone script (xiami\_auto\_checkin.py): ##
 
 **Deprecated. No update any more.**
 
@@ -36,7 +37,6 @@ to run script in single-pass mode. It will login and check in, then quit.
 
 windviki(at)gmail.com
 
-----------------------------------------------------------------------------
 
 ## windows上打包好的exe使用说明： ##
 
